@@ -1,18 +1,4 @@
-# 1. Implementasi pembuatan TCP socket dan mengaitkannya ke alamat dan port tertentu
-# (poin: 20)
-# 2. Program web server dapat menerima dan memparsing HTTP request yang dikirimkan
-# oleh browser(poin: 20)
-# 3. Web server dapat mencari dan mengambil file(dari file system) yang diminta oleh
-# client(poin: 15)
-# 4. Web server dapat membuat HTTP response message yang terdiri dari header dan
-# konten file yang diminta(poin: 20)
-# 5. Web server dapat mengirimkan response message yang sudah dibuat ke browser
-# (client) dan dapat ditampilkan dengan benar di sisi client(poin: 15)
-# 6. Jika file yang diminta oleh client tidak tersedia, web server dapat mengirimkan pesan
-# "404 Not Found" dan dapat ditampilkan dengan benar di sisi client. (poin: 10)
-
-# 1301213294
-# 1301210233
+# 1301213294 | 1301210233
 
 from socket import *
 import sys
@@ -24,25 +10,44 @@ serverSocket.bind(('', serverPort))
 serverSocket.listen(1)
 
 while True:
-    # Establish the connection
     print('Ready to serve...')
+    # membuat koneksi baru dari client
     connectionSocket, addr = serverSocket.accept()
     try:
         message = connectionSocket.recv(1024).decode()
-        filename = message.split()[1]
-        f = open(filename[1:])
-        outputdata = f.read()
-        # Send one HTTP header line into socket
-        connectionSocket.send("HTTP/1.1 OK\r\n\r\n".encode())
-        # Send the content of the requested file to the client
+        request = message.split()
+
+        # mengecek apakah request method GET
+        if len(request) < 2 or request[0] != "GET":
+            raise IOError
+
+        # mengambil nama file dan mencoba membuka file
+        filename = request[1][1:]
+        with open(filename) as f:
+            outputdata = f.read()
+
+        # HTTP response header jika file ditemukan
+        connectionSocket.send("HTTP/1.1 200 OK\r\n".encode())
+        connectionSocket.send("Content-Type: text/html\r\n".encode())
+        connectionSocket.send(
+            "Content-Length: {}\r\n".format(len(outputdata)).encode())
+        connectionSocket.send("\r\n".encode())
+
+        # mengirim konten file ke client
         for i in range(0, len(outputdata)):
             connectionSocket.send(outputdata[i].encode())
-        connectionSocket.send("\r\n".encode())
+
+        # menutup socket client
         connectionSocket.close()
     except IOError:
-        # Send response message for file not found
-        connectionSocket.send("HTTP/1.1 404 Not Found\r\n\r\n".encode())
-        # Close client socket
+        # HTTP header untuk file not found atau request method bukan GET
+        connectionSocket.send("HTTP/1.1 404 Not Found\r\n".encode())
+        connectionSocket.send("Content-Type: text/html\r\n".encode())
+        connectionSocket.send("\r\n".encode())
+        connectionSocket.send(
+            "<html><head></head><body><h1>404 Not Found</h1></body></html>".encode())
+
+        # menutup socket client
         connectionSocket.close()
 
 serverSocket.close()
