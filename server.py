@@ -5,6 +5,7 @@ import sys
 from streaming_form_data import StreamingFormDataParser
 from streaming_form_data.targets import FileTarget
 import os
+import urllib.parse
 
 # Membuat socket server
 serverSocket = socket(AF_INET, SOCK_STREAM)
@@ -43,7 +44,7 @@ while True:
         if request_method[0] == "GET":
             # Jika request method GET
             # Mengambil nama file yang diminta oleh client
-            filename = request_method[1][1:]
+            filename = urllib.parse.unquote(request_method[1][1:])
 
             # Membuka file yang diminta oleh client
             with open(filename, "rb") as f:
@@ -70,7 +71,7 @@ while True:
 
             # HTTP response header
             response_header = "HTTP/1.1 303 See Other\r\n"
-            response_header += f"Location: {target.multipart_filename}\r\n\r\n"
+            response_header += f"Location: {urllib.parse.quote(target.multipart_filename)}\r\n\r\n"
 
             # Mengirim HTTP response message ke client
             connectionSocket.send(response_header.encode())
