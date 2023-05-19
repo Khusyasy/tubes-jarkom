@@ -6,38 +6,57 @@ import sys
 # Membuat socket server
 serverSocket = socket(AF_INET, SOCK_STREAM)
 serverPort = 6789
-serverSocket.bind(('', serverPort))
+serverSocket.bind(("", serverPort))
 serverSocket.listen(1)
 
 while True:
     # Menunggu koneksi dari client
-    print('Ready to serve...')
+    print("Ready to serve...")
     # Membuat socket baru untuk koneksi dengan client
     connectionSocket, addr = serverSocket.accept()
     try:
         # Menerima dan memparsing HTTP request dari client
-        message = connectionSocket.recv(1024).decode()
-        request = message.split()
+        chunk = []
+        while True:
+            data = connectionSocket.recv(1024)
+            chunk.append(data)
+            if not data or len(data) < 1024:
+                break
+        message = (b''.join(chunk)).decode()
+        request_header, request_body = message.split('\r\n\r\n', 1)
+        request_header = request_header.split()
 
-        # Mengecek apakah request method adalah GET
-        if len(request) < 2 or request[0] != "GET":
+        # Mengecek apakah request method
+        if len(request_header) < 2:
             raise IOError
 
-        # Mengambil nama file yang diminta oleh client
-        filename = request[1][1:]
+        if request_header[0] == "GET":
+            # Jika request method GET
+            # Mengambil nama file yang diminta oleh client
+            filename = request_header[1][1:]
 
-        # Membuka file yang diminta oleh client
-        with open(filename, 'rb') as f:
-            outputdata = f.read()
+            # Membuka file yang diminta oleh client
+            with open(filename, "rb") as f:
+                outputdata = f.read()
 
-        # HTTP response header jika file ditemukan
-        response_header = "HTTP/1.1 200 OK\r\n"
-        response_header += "Content-Type: text/html\r\n"
-        response_header += f"Content-Length: {len(outputdata)}\r\n\r\n"
+            # HTTP response header jika file ditemukan
+            response_header = "HTTP/1.1 200 OK\r\n"
+            response_header += "Content-Type: text/html\r\n"
+            response_header += f"Content-Length: {len(outputdata)}\r\n\r\n"
 
-        # Mengirim HTTP response message ke client
-        connectionSocket.send(response_header.encode())
-        connectionSocket.sendall(outputdata)
+            # Mengirim HTTP response message ke client
+            connectionSocket.send(response_header.encode())
+            connectionSocket.sendall(outputdata)
+        elif request_header[0] == "POST":
+            # # Jika request method POST
+            # # HTTP response header
+            # response_header = "HTTP/1.1 200 OK\r\n"
+            # response_header = f"Location: /{filename}\r\n\r\n"
+
+            # # Mengirim HTTP response message ke client
+            # connectionSocket.send(response_header.encode())
+            pass
+
 
     except IOError:
         # Mengirim response "404 Not Found" jika file tidak ditemukan
