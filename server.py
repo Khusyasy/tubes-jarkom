@@ -63,13 +63,27 @@ while True:
             connectionSocket.sendall(outputdata)
         elif req_startline[0] == "POST":
             # Jika request method POST
-            # Parsing form data
 
-            # Menyimpan file upload dari client
+            # Parsing form data
+            # Membaca boundary dari HTTP request header
+            boundary = req_headers['Content-Type'].split('=')[1]
+
+            # Membaca form data dari HTTP request body
+            req_body = req_body.split(f"--{boundary}\r\n", 1)[1]
+            req_body = req_body.split(f"\r\n--{boundary}--\r\n")[0]
+            filename = req_body.split('filename="')[1].split('"')[0]
+            filecontent = req_body.split('\r\n\r\n', 1)[1]
+
+            # Menyimpan file yang dikirim oleh client
+            try:
+                with open(filename, "wb") as f:
+                    f.write(filecontent.encode())
+            except:
+                pass
 
             # HTTP response header
             response_header = "HTTP/1.1 303 See Other\r\n"
-            response_header += f"Location: {urllib.parse.quote('filename')}\r\n\r\n"
+            response_header += f"Location: {urllib.parse.quote(filename)}\r\n\r\n"
 
             # Mengirim HTTP response message ke client
             connectionSocket.send(response_header.encode())
