@@ -26,12 +26,13 @@ try:
     clientSocket.send(request.encode())
 
     # Menerima respons dari server
-    response = ""
+    chunk = []
     while True:
         data = clientSocket.recv(1024)
+        chunk.append(data.decode())
         if not data:
             break
-        response += data.decode()
+    response = "".join(chunk)
 
     # Mencetak HTTP response
     print(response)

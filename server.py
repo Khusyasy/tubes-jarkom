@@ -8,15 +8,16 @@ import urllib.parse
 
 def parse_http(message):
     # Memparsing HTTP request
-    startline, message = message.split('\r\n', 1)
+    startline, message = message.split("\r\n", 1)
     startline = startline.split()
-    header_text, body = message.split('\r\n\r\n', 1)
-    header_text = header_text.split('\r\n')
+    header_text, body = message.split("\r\n\r\n", 1)
+    header_text = header_text.split("\r\n")
     headers = {}
     for header in header_text:
-        key, value = header.split(':', 1)
+        key, value = header.split(":", 1)
         headers[key] = value.strip()
-    return startline, headers, body
+    return (startline, headers, body)
+
 
 # Membuat socket server
 serverSocket = socket(AF_INET, SOCK_STREAM)
@@ -34,16 +35,12 @@ while True:
         chunk = []
         while True:
             data = connectionSocket.recv(1024)
-            chunk.append(data)
+            chunk.append(data.decode())
             if not data or len(data) < 1024:
                 break
-        message = (b''.join(chunk)).decode()
+        message = "".join(chunk)
 
         req_startline, req_headers, req_body = parse_http(message)
-
-        # Mengecek apakah request method
-        if len(req_startline) < 2:
-            raise IOError
 
         if req_startline[0] == "GET":
             # Jika request method GET
@@ -60,19 +57,19 @@ while True:
 
             # Mengirim HTTP response message ke client
             connectionSocket.send(response_header.encode())
-            connectionSocket.sendall(outputdata)
+            connectionSocket.send(outputdata)
         elif req_startline[0] == "POST":
             # Jika request method POST
 
             # Parsing form data
             # Membaca boundary dari HTTP request header
-            boundary = req_headers['Content-Type'].split('=')[1]
+            boundary = req_headers["Content-Type"].split("=")[1]
 
             # Membaca form data dari HTTP request body
             req_body = req_body.split(f"--{boundary}\r\n", 1)[1]
             req_body = req_body.split(f"\r\n--{boundary}--\r\n")[0]
             filename = req_body.split('filename="')[1].split('"')[0]
-            filecontent = req_body.split('\r\n\r\n', 1)[1]
+            filecontent = req_body.split("\r\n\r\n", 1)[1]
 
             # Menyimpan file yang dikirim oleh client
             try:
@@ -87,8 +84,6 @@ while True:
 
             # Mengirim HTTP response message ke client
             connectionSocket.send(response_header.encode())
-            pass
-
 
     except IOError:
         # Mengirim response "404 Not Found" jika file tidak ditemukan
