@@ -61,6 +61,16 @@ while True:
         elif req_startline[0] == "POST":
             # Jika request method POST
 
+            # buat chrome aja
+            if (req_body.strip() == ""):
+                chunk = []
+                while True:
+                    data = connectionSocket.recv(1024)
+                    chunk.append(data.decode())
+                    if not data or len(data) < 1024:
+                        break
+                req_body = "".join(chunk)
+
             # Parsing form data
             # Membaca boundary dari HTTP request header
             boundary = req_headers["Content-Type"].split("=")[1]
